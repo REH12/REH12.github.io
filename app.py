@@ -43,34 +43,58 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
         }
     ),
 
-    html.Div(children='Demoing a single topic timeseries', style={
-        'textAlign': 'center',
-        'color': colors['text']
-    }),
-	
-	html.H2(children = 'the size of the dataframe is {} rows'.format(dimensions[0]), style = {
+	html.H2(children = 'simple exploration of topic time series', style = {
 		'textAlign': 'center'
 	}),
 	
 	
-	dcc.Graph(
-        id='topic-through-time',
-        figure={
-            'data': [
-                go.Scatter(
-							x = dfplot['date'],
-							y = np.log10(dfplot['0']),
-							mode = 'lines'
-							)
-							],
-				'layout': go.Layout(
-                xaxis={ 'title': 'Date'},
-                yaxis={'title': 'Probability (log)'}
-				)
-				})
+	dcc.Graph(id='graph-with-slider'),
+    dcc.Slider(
+        id='topic-slider',
+        value= str(0),
+        marks={str(t): str(t) for t in range(100)}
+    ),
+	html.H2(id='topic-number')
 	
 	])
 	
+	
+
+@app.callback(
+    dash.dependencies.Output('topic-number', 'children'),
+    [dash.dependencies.Input('topic-slider', 'value')])
+def update_sliderlabel(selected_topic):
+	return "you have selected topic: {}".format(selected_topic)
+
+	
+@app.callback(
+    dash.dependencies.Output('graph-with-slider', 'figure'),
+    [dash.dependencies.Input('topic-slider', 'value')])
+
+def update_figure(selected_topic):
+    
+	filtered_df = dfplot[[str(selected_topic),'date']]
+	return_data = [go.Scatter(
+			mode = 'lines',
+            x=dfplot['date'],
+            y=dfplot[str(selected_topic)],
+            
+            opacity=0.7,
+            marker={
+                'size': 15,
+                'line': {'width': 0.5, 'color': 'white'}
+            }
+			)]
+	return {
+        'data': return_data,
+        'layout': go.Layout(
+            xaxis={ 'title': 'Date'},
+            yaxis={'type': 'log','title': 'Topic probability (Log10)'},
+            margin={'l': 80, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0, 'y': 1},
+            hovermode='closest'
+        )
+    }	
 	
 if __name__ == '__main__':
 	app.run_server(debug=True)
